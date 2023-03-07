@@ -1,0 +1,1 @@
+class Genetic_ALgorithm:
