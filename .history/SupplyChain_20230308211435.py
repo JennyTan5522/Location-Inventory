@@ -1,7 +1,7 @@
 import yaml
 import random
 import numpy as np
-
+#from GA import GA
 class SupplyChain:
     random.seed(42)
     def __init__(self,PROBLEM_SIZE,SITUATION_TYPE):
@@ -107,7 +107,7 @@ class SupplyChain:
             probState0List.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])/(self.DC_ARRIVAL_RATE_1[j]+(self.DC_ARRIVAL_RATE_2[j]+(Q[j]*self.LEAD_TIME[j]))*pow((1+self.LEAD_TIME[j]/self.DC_ARRIVAL_RATE_1[j]),s[j]))
         return probState0List
     
-    def calcInventoryLevelCost(self,s:list,Q:list):#TODO
+    def calcInventoryLevelCost(self,s,Q):#TODO
         '''Calculate inventory level cost for each DC'''
         ilCostList=[]
         self.probState0List=self.calcProbState0(s,Q)
@@ -188,7 +188,6 @@ class SupplyChain:
 
     def penaltyCost():
         '''Calculate penalty cost for dummy DC'''
-        #Cal how many customers assign to DC then multiply (1 penalty add 10k)
         pass
     
     #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
@@ -208,6 +207,16 @@ class SupplyChain:
             Qmin.append(QminCost) 
         return Qmin
     
+
+
+
+    #Move to GA
+    # def run(self):
+    #     for i in range(self.POP_SIZE):
+    #         self.X=self.generateX(self.population[i])
+    #         Y=self.generateY(self.X)
+    #         #fixedCost=self.calcTerm1(Y)
+    #         self.calcTotalCost(self.X,self.Y,s,Q)
 #Create SC instance objects
 def main():
     sc_small_II=SupplyChain('5-10','TYPE_II')

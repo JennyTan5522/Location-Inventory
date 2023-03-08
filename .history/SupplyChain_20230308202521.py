@@ -1,7 +1,7 @@
 import yaml
 import random
 import numpy as np
-
+#from GA import GA
 class SupplyChain:
     random.seed(42)
     def __init__(self,PROBLEM_SIZE,SITUATION_TYPE):
@@ -122,7 +122,7 @@ class SupplyChain:
             ilCostList.append(a*((b+c-d-e)*self.probState0List[j])+f*g*self.probState0List[j])
         return ilCostList
 
-    def calcTerm2(self,Y:list,s,Q):
+    def calcTerm2(self,Y:list,s:list,Q:list):
         '''Term 2: Calculate holding cost of each DC'''
         totalHoldingCost=0
         self.il=self.calcInventoryLevelCost(s,Q) #If s and Q are list TODO
@@ -130,14 +130,14 @@ class SupplyChain:
             totalHoldingCost+=self.HOLDING_COST[j]*(self.il[j])*Y[j]
         return totalHoldingCost
         
-    def calcReorderRate(self,s,Q):
+    def calcReorderRate(self,s:list,Q:list):
         reorderCostList=[]
         probState0=self.calcProbState0(s,Q)
         for j in range(self.NO_OF_DC):
             reorderCostList.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])*probState0[j]*(s[j]+1)
         return reorderCostList
 
-    def calcTerm3(self,Y:list,Q):
+    def calcTerm3(self,Y:list,Q:list):
         '''Term 3: Calculate setup cost, unit purchasing cost and fixed shipping cost per order between Supplier and DC'''
         total=0
         self.reorderCostList=self.calcReorderRate
@@ -167,7 +167,7 @@ class SupplyChain:
             shortageRate1List.append(self.DC_ARRIVAL_RATE_1[j]*self.probState0List[j])
         return shortageRate1List 
 
-    def calcShortageRate2(self,s):
+    def calcShortageRate2(self,s:list):
         '''Calculate Mean Shortage Rates for the ORDINARY customers at each DC'''
         shortageRate2List=[]
         for j in range(self.NO_OF_DC):
@@ -188,26 +188,32 @@ class SupplyChain:
 
     def penaltyCost():
         '''Calculate penalty cost for dummy DC'''
-        #Cal how many customers assign to DC then multiply (1 penalty add 10k)
         pass
     
     #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
-    def calcTotalCost(self,X:list,Y:list,s,Q):
+    def calcTotalCost(self,X:list,Y:list,s:list,Q:list):
         '''Calculate min total cost (TC)'''
         return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
     
-    #Try to do total cost for one DC, no need to loop j
-    def calcTotalCostForEachDC(self,X:list,Y,s,Q): #X is matrix, only pass that column(ONLY COL), Y only 1 or 0 not list d
-        pass
-
     def calcQmin(self):
         '''Step 1: Calculate Qmin for each DC'''
         Qmin=[]
         for j in range(self.NO_OF_DC):
-            QminCost=((self.COST_LOSE_1-self.PURCHASING_COST_UNIT[j])*self.DC_ARRIVAL_RATE_1[j]*(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j]))/(self.HOLDING_COST[j]*self.LEAD_TIME[j])
-            Qmin.append(QminCost) 
+            QminCost=0
+            for r in range(len(self.CUSTOMER_CLASS.keys())):
+                if r==0: #Priority customer
+                    QminCost=((self.COST_LOSE_1-self.PURCHASING_COST_UNIT[j])*self.sc.DC_ARRIVAL_RATE_1[j]*(self.sc.DC_ARRIVAL_RATE_1[j]+self.sc.DC_ARRIVAL_RATE_2[j]))/(self.sc.HOLDING_COST[j]*self.sc.LEAD_TIME[j])
+                else: #Ordinary customer
+                    QminCost=((self.COST_LOSE_2-self.sc.PURCHASING_COST_UNIT[j])*self.sc.DC_ARRIVAL_RATE_1[j]*(self.sc.DC_ARRIVAL_RATE_1[j]+self.sc.DC_ARRIVAL_RATE_2[j]))/(self.sc.HOLDING_COST[j]*self.sc.LEAD_TIME[j])
+                Qmin.append(QminCost) 
         return Qmin
-    
+    #Move to GA
+    # def run(self):
+    #     for i in range(self.POP_SIZE):
+    #         self.X=self.generateX(self.population[i])
+    #         Y=self.generateY(self.X)
+    #         #fixedCost=self.calcTerm1(Y)
+    #         self.calcTotalCost(self.X,self.Y,s,Q)
 #Create SC instance objects
 def main():
     sc_small_II=SupplyChain('5-10','TYPE_II')

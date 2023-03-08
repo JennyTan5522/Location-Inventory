@@ -1,7 +1,7 @@
 from SupplyChain import SupplyChain
 from GA import GA
 #Access with SC formula
-
+#Calculate all move to SC
 class OptimalIDV:
     '''This class is used to find the optimal inventory decision variable (s,Q)'''
     def __init__(self):

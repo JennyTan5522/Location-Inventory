@@ -208,6 +208,16 @@ class SupplyChain:
             Qmin.append(QminCost) 
         return Qmin
     
+
+
+
+    #Move to GA
+    # def run(self):
+    #     for i in range(self.POP_SIZE):
+    #         self.X=self.generateX(self.population[i])
+    #         Y=self.generateY(self.X)
+    #         #fixedCost=self.calcTerm1(Y)
+    #         self.calcTotalCost(self.X,self.Y,s,Q)
 #Create SC instance objects
 def main():
     sc_small_II=SupplyChain('5-10','TYPE_II')

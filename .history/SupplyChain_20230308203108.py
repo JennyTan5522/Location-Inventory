@@ -1,7 +1,7 @@
 import yaml
 import random
 import numpy as np
-
+#from GA import GA
 class SupplyChain:
     random.seed(42)
     def __init__(self,PROBLEM_SIZE,SITUATION_TYPE):
@@ -122,7 +122,7 @@ class SupplyChain:
             ilCostList.append(a*((b+c-d-e)*self.probState0List[j])+f*g*self.probState0List[j])
         return ilCostList
 
-    def calcTerm2(self,Y:list,s,Q):
+    def calcTerm2(self,Y:list,s:list,Q:list):
         '''Term 2: Calculate holding cost of each DC'''
         totalHoldingCost=0
         self.il=self.calcInventoryLevelCost(s,Q) #If s and Q are list TODO
@@ -130,14 +130,14 @@ class SupplyChain:
             totalHoldingCost+=self.HOLDING_COST[j]*(self.il[j])*Y[j]
         return totalHoldingCost
         
-    def calcReorderRate(self,s,Q):
+    def calcReorderRate(self,s:list,Q:list):
         reorderCostList=[]
         probState0=self.calcProbState0(s,Q)
         for j in range(self.NO_OF_DC):
             reorderCostList.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])*probState0[j]*(s[j]+1)
         return reorderCostList
 
-    def calcTerm3(self,Y:list,Q):
+    def calcTerm3(self,Y:list,Q:list):
         '''Term 3: Calculate setup cost, unit purchasing cost and fixed shipping cost per order between Supplier and DC'''
         total=0
         self.reorderCostList=self.calcReorderRate
@@ -167,7 +167,7 @@ class SupplyChain:
             shortageRate1List.append(self.DC_ARRIVAL_RATE_1[j]*self.probState0List[j])
         return shortageRate1List 
 
-    def calcShortageRate2(self,s):
+    def calcShortageRate2(self,s:list):
         '''Calculate Mean Shortage Rates for the ORDINARY customers at each DC'''
         shortageRate2List=[]
         for j in range(self.NO_OF_DC):
@@ -188,18 +188,13 @@ class SupplyChain:
 
     def penaltyCost():
         '''Calculate penalty cost for dummy DC'''
-        #Cal how many customers assign to DC then multiply (1 penalty add 10k)
         pass
     
     #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
-    def calcTotalCost(self,X:list,Y:list,s,Q):
+    def calcTotalCost(self,X:list,Y:list,s:list,Q:list):
         '''Calculate min total cost (TC)'''
         return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
     
-    #Try to do total cost for one DC, no need to loop j
-    def calcTotalCostForEachDC(self,X:list,Y,s,Q): #X is matrix, only pass that column(ONLY COL), Y only 1 or 0 not list d
-        pass
-
     def calcQmin(self):
         '''Step 1: Calculate Qmin for each DC'''
         Qmin=[]
@@ -208,6 +203,48 @@ class SupplyChain:
             Qmin.append(QminCost) 
         return Qmin
     
+    def calcOptimalSQ(self,Qmin:list):
+        '''Step 2: Find optimal S0j, Q0j and costs'''
+        optimalQS={'Q':0,'s':0}
+        minTotalCost=100000
+        for qm in range(len(Qmin)):
+            #Make sure Qmin>0
+            if Qmin[qm]>0 and qm==0: #TODO remove qm==0 just for testing
+                for num in reversed(range(4,round(Qmin[qm]+1))):
+                    #Ori=232, q=231, s=230
+                    q=num-1
+                    s=num-2
+                    print(q)
+                    print(s)
+                    #Find optimal sj,qj until TC=0, sub sj and qj into the TC
+                    #TODO is it need to loop thru population?
+                    for i in range(self.GA.POP_SIZE):
+                        population=self.GA.initialPopulation()
+                        X=self.sc.generateX(population[i])
+                        Y=self.sc.generateY(population[i])
+                        totalCost=self.sc.calcTotalCost(X,Y,s,q) #TODO X and Y how define?
+                    # if(totalCost<minTotalCost):
+                    #     minTotalCost=totalCost
+                    #     optimalQS['Q']=Qmin[q]
+                    #     optimalQS['s']=Qmin[s]
+
+                    # if(totalCost==0):
+                    #     optimalQS['Q']=Qmin[q]
+                    #     optimalQS['s']=Qmin[s]
+                    #     break
+                        
+                print('-----------------------------------')
+    
+
+
+
+    #Move to GA
+    # def run(self):
+    #     for i in range(self.POP_SIZE):
+    #         self.X=self.generateX(self.population[i])
+    #         Y=self.generateY(self.X)
+    #         #fixedCost=self.calcTerm1(Y)
+    #         self.calcTotalCost(self.X,self.Y,s,Q)
 #Create SC instance objects
 def main():
     sc_small_II=SupplyChain('5-10','TYPE_II')

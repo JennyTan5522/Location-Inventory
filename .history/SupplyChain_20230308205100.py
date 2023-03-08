@@ -1,7 +1,7 @@
 import yaml
 import random
 import numpy as np
-
+#from GA import GA
 class SupplyChain:
     random.seed(42)
     def __init__(self,PROBLEM_SIZE,SITUATION_TYPE):
@@ -100,14 +100,14 @@ class SupplyChain:
             fixedCost+=self.FIXED_COST[j]*Y[j]
         return fixedCost
     
-    def calcProbState0(self,s:list,Q:list):
+    def calcProbState0(self,s,Q):
         '''Calculate probability at Stage 0'''
         probState0List=[]
         for j in range(self.NO_OF_DC):
             probState0List.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])/(self.DC_ARRIVAL_RATE_1[j]+(self.DC_ARRIVAL_RATE_2[j]+(Q[j]*self.LEAD_TIME[j]))*pow((1+self.LEAD_TIME[j]/self.DC_ARRIVAL_RATE_1[j]),s[j]))
         return probState0List
     
-    def calcInventoryLevelCost(self,s:list,Q:list):#TODO
+    def calcInventoryLevelCost(self,s,Q):#TODO
         '''Calculate inventory level cost for each DC'''
         ilCostList=[]
         self.probState0List=self.calcProbState0(s,Q)
@@ -188,7 +188,6 @@ class SupplyChain:
 
     def penaltyCost():
         '''Calculate penalty cost for dummy DC'''
-        #Cal how many customers assign to DC then multiply (1 penalty add 10k)
         pass
     
     #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
@@ -196,9 +195,7 @@ class SupplyChain:
         '''Calculate min total cost (TC)'''
         return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
     
-    #Try to do total cost for one DC, no need to loop j
-    def calcTotalCostForEachDC(self,X:list,Y,s,Q): #X is matrix, only pass that column(ONLY COL), Y only 1 or 0 not list d
-        pass
+    #Try to do total cost for one DC
 
     def calcQmin(self):
         '''Step 1: Calculate Qmin for each DC'''
@@ -208,6 +205,16 @@ class SupplyChain:
             Qmin.append(QminCost) 
         return Qmin
     
+
+
+
+    #Move to GA
+    # def run(self):
+    #     for i in range(self.POP_SIZE):
+    #         self.X=self.generateX(self.population[i])
+    #         Y=self.generateY(self.X)
+    #         #fixedCost=self.calcTerm1(Y)
+    #         self.calcTotalCost(self.X,self.Y,s,Q)
 #Create SC instance objects
 def main():
     sc_small_II=SupplyChain('5-10','TYPE_II')
