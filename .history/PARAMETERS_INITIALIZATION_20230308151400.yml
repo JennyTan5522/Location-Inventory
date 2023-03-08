@@ -1,0 +1,89 @@
+# PROBLEM SIZE INITIALIZATION
+# ===========================================================================================
+# Create dict of 3 problem sizes with different number of [No of Suppliers,No of DCs, No of Retailers]
+# Create 3 different size lists [SMALL,MEDIUM,LARGE]
+# Based on the size type, create lists of no [S,DC,R] 
+PROBLEM_SIZE:
+ - SMALL:
+    5-10: [1,5,10]
+    10-20: [1,10,20]
+    15-30: [1,15,30]
+
+ - MEDIUM:
+    50-75: [1,50,75]
+    75-150: [1,75,150]
+    100-250: [1,100,250]
+
+ - LARGE:
+    200-300: [1,200,300]
+    350-500: [1,350,500]
+    500-1300: [1,500,1300]
+
+# SITUATION TYPE INITIALIZATION
+# ===========================================================================================
+# Parameters definition
+# ---------------------------
+# SETUP_COST(k)             : Setup cost per order from the supplier to DC(j)
+# HOLDING_COST(h)           : Holding cost per unit time at DC
+# PURCHASING_COST_UNIT(c)   : Unit purchasing cost per order from the supplier to DC
+# SHIPPING_COST(C)          : Shipping cost per order between retailer(i) and DC
+# LEAD_TIME(u)              : Lead time for replenishment at DC
+# FIXED_SHIPPING_COST(g)    : Fixed shipping cost between supplier and DC
+# DC_ARRIVAL_RATE(lambda)   : Arrival rate of demand at DC
+# FIXED_COST(f)             : Fixed cost per unit time of DC
+# COST_LOSE_1               : Cost for losing priority customer
+# COST_LOSE_2               : Cost for losing priority ordinary
+SITUATION_TYPE:
+#DCs with low demand (perishable products)
+ -  TYPE_I:
+     SETUP_COST: [800,1300]
+     HOLDING_COST: [500,1500]
+     PURCHASING_COST_UNIT: [50,50]
+     SHIPPING_COST: [50,550]
+     LEAD_TIME: [1,3]
+     FIXED_SHIPPING_COST: [1000,2000]
+     DC_ARRIVAL_RATE: [20,50]
+     FIXED_COST: [5000,20000]
+     COST_LOSE_1: 100
+     COST_LOSE_2: 50
+#DCs closer to retailers (Enough trucks/drivers) (Far from suppliers)    
+ -  TYPE_II:
+     SETUP_COST: [400,800]
+     HOLDING_COST: [500,1500]
+     PURCHASING_COST_UNIT: [20,100]
+     SHIPPING_COST: [50,500]
+     LEAD_TIME: [1,3]
+     FIXED_SHIPPING_COST: [1000,2000]
+     DC_ARRIVAL_RATE: [50,100]
+     FIXED_COST: [5000,20000]
+     COST_LOSE_1: 100
+     COST_LOSE_2: 50     
+#DCs closer to suppliers (Far from retailers)
+ -  TYPE_III:
+     SETUP_COST: [600,1600]
+     HOLDING_COST: [500,1500]
+     PURCHASING_COST_UNIT: [50,55]
+     SHIPPING_COST: [200,1000]
+     LEAD_TIME: [1,3]
+     FIXED_SHIPPING_COST: [1000,2000]
+     DC_ARRIVAL_RATE: [50,100]
+     FIXED_COST: [5000,20000]
+     COST_LOSE_1: 100
+     COST_LOSE_2: 50  
+#Ideal DCs that try to minimize all operation costs
+ -  TYPE_IV:
+     SETUP_COST: [500,700]
+     HOLDING_COST: [100,300]
+     PURCHASING_COST_UNIT: [20,45]
+     SHIPPING_COST: [200,450]
+     LEAD_TIME: [1,3]
+     FIXED_SHIPPING_COST: [1000,2000]
+     DC_ARRIVAL_RATE: [50,100]
+     FIXED_COST: [5000,20000]
+     COST_LOSE_1: 100
+     COST_LOSE_2: 50  
+
+ -  DUMMY:
+     FIXED_COST: 0
+
+
