@@ -3,33 +3,27 @@ import random
 import numpy as np
 
 class SupplyChain:
-    random.seed(42)
-    def __init__(self,PROBLEM_SIZE,SITUATION_TYPE):
-        number_probSize=[]
-        cost_list=[]
+
+    def __init__(self,PROBLEM_SIZE,SITUATION_TYPE,display_param=False):
+        random.seed(42)
         #Load yaml file
         with open('PARAMETERS_INITIALIZATION.yml','r') as f:
             PARAMETERS_INITIALIZATION=yaml.safe_load(f)
         #======================================================================================================
         #Find problem size and initialize each number of Suppliers, DCs and Retailers
-        for i in range(len(PARAMETERS_INITIALIZATION['PROBLEM_SIZE'])):
-            #Loop for each size (SMALL,MEDIUM,LARGE)
-            for size in PARAMETERS_INITIALIZATION['PROBLEM_SIZE'][i]:
-                #Loop for size's values
-                for size_value in PARAMETERS_INITIALIZATION['PROBLEM_SIZE'][i][size]:
-                    #Extract number from size's values
-                    if (size_value==PROBLEM_SIZE): #Means the value inside
-                        #Loop for No fo Suppliers, DCs and retailers
-                        number_probSize=PARAMETERS_INITIALIZATION['PROBLEM_SIZE'][i][size][size_value]
-                        break      
+        try:
+            number_probSize=PARAMETERS_INITIALIZATION['PROBLEM_SIZE'][PROBLEM_SIZE]
+        except:
+            raise ValueError(f'Unknown Problem Size -{PROBLEM_SIZE}')
+        self.NO_OF_SUPPLIER,self.NO_OF_DC,self.NO_OF_RETAILER=number_probSize
+  
         #======================================================================================================
-        #Find cost based on situation type                
-        for i in range(len(PARAMETERS_INITIALIZATION['SITUATION_TYPE'])):
-            #Loop through each type
-            for cost_types in PARAMETERS_INITIALIZATION['SITUATION_TYPE'][i]:
-                if (cost_types==SITUATION_TYPE):
-                    cost_list=PARAMETERS_INITIALIZATION['SITUATION_TYPE'][i][cost_types]
-                    break
+        #Find cost based on situation type    
+        try:
+            cost_list=PARAMETERS_INITIALIZATION['SITUATION_TYPE'][cost_types]
+        except:
+            raise ValueError(f'Unknown Situation Type -{SITUATION_TYPE}')            
+
         #======================================================================================================        
         #Problem size initialization          
         self.NO_OF_SUPPLIER=number_probSize[0]
@@ -61,9 +55,10 @@ class SupplyChain:
                 self.RETAILER_ARRIVAL_RATE_1[i]=self.RETAILER_ARRIVAL_RATE_2[i]
                 self.RETAILER_ARRIVAL_RATE_2[i]=temp
 
-        #TODO arrival rate priority n ordinary rate
-        #self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2=self.dcArrivalRate() #TODO how to pass X?
+        if display_param==False:
+            display_param()
 
+    def display_param(self):
         print('Number of suppliers : ',self.NO_OF_SUPPLIER)
         print('Number of DCs       : ',self.NO_OF_DC)
         print('Number of retailers : ',self.NO_OF_RETAILER)
@@ -82,39 +77,22 @@ class SupplyChain:
         print('Cost losing ordinary customer    : ',self.COST_LOSE_2)
 
 
+
     def dcArrivalRate(self,X):
-        '''Find DC arrival rate based on retailer arrival rate'''
+        '''Find DC arrival rate based on retailer arrival rate
+           Arrival rate depends on X.
+           Chromosome -> X -> generate DC Arrival rate -> Compute total cost
+        '''
         retailerArrivalRate1=np.reshape(self.RETAILER_ARRIVAL_RATE_1,(1,self.NO_OF_RETAILER))
         dcArrivalRate1=np.matmul(retailerArrivalRate1,np.array(X))
         retailerArrivalRate2=np.reshape(self.RETAILER_ARRIVAL_RATE_2,(1,self.NO_OF_RETAILER))
         dcArrivalRate2=np.matmul(retailerArrivalRate2,np.array(X))
-        DC_ARRIVAL_RATE_1=[ar for _,ar in enumerate(dcArrivalRate1)]
-        DC_ARRIVAL_RATE_2=[ar for _,ar in enumerate(dcArrivalRate2)]
-        return DC_ARRIVAL_RATE_1,DC_ARRIVAL_RATE_2
-
-    def generateX(self,chromosome:list):
-        '''Matrix X is generated for each chromosome'''
-        X=np.zeros((self.NO_OF_RETAILER,self.NO_OF_DC)).astype(int)
-        for idx,dc in enumerate(chromosome):
-            X[idx][dc-1]=1
-        return X
-      
-    def generateY(self,X):
-        '''Matrix Y is generated based on X'''
-        Y=np.zeros(self.NO_OF_DC).astype(int).tolist()
-        for j in range(self.NO_OF_DC):
-        #Loop each retailer whether it got assign to the DC 
-            for i in range(self.NO_OF_RETAILER):
-                if (X[i][j]==1):
-                    Y[j]=1 
-        return Y
+        self.DC_ARRIVAL_RATE_1=[ar for _,ar in enumerate(dcArrivalRate1)]
+        self.DC_ARRIVAL_RATE_2=[ar for _,ar in enumerate(dcArrivalRate2)]
       
     def calcTerm1(self,Y:list):
         '''Term 1: Calculate fixed cost of each DC'''  
-        fixedCost=0
-        for j in range(self.NO_OF_DC):
-            fixedCost+=self.FIXED_COST[j]*Y[j]
-        return fixedCost
+        return np.dot(self.FIXED_COST,Y)
     
     def calcProbState0(self,s:list,Q:list):
         '''Calculate probability at Stage 0'''
@@ -212,6 +190,8 @@ class SupplyChain:
     
     def calcTotalCost(self,X:list,Y:list,s,Q):
         '''Calculate min total cost (TC)'''
+         #TODO arrival rate priority n ordinary rate
+        #self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2=self.dcArrivalRate() #TODO how to pass X?
         return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
     
     #TODO Try to do total cost for one DC, no need to loop j
@@ -227,6 +207,6 @@ class SupplyChain:
         return Qmin
     
 #Create SC instance objects
-def main():
-    sc_small_II=SupplyChain('5-10','TYPE_II')
-main()
+if __name__=="__main__":
+    sc_small_II=SupplyChain('5-10','TYPE_II',display_param=True)
+
