@@ -62,24 +62,24 @@ class SupplyChain:
                 self.RETAILER_ARRIVAL_RATE_2[i]=temp
 
         #TODO arrival rate priority n ordinary rate
-        self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2=self.dcArrivalRate() #TODO how to pass X?
+        #self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2=self.dcArrivalRate() #TODO how to pass X?
 
         print('Number of suppliers : ',self.NO_OF_SUPPLIER)
         print('Number of DCs       : ',self.NO_OF_DC)
         print('Number of retailers : ',self.NO_OF_RETAILER)
         print('                   Costs Listing')
         print('=============================================================')
-        print('Setup cost      : ',self.SETUP_COST)
-        print('Holding cost    : ',self.HOLDING_COST)
-        print('Purchasing cost : ',self.HOLDING_COST)
-        print('Shipping cost   : ',self.SHIPPING_COST)
-        print('Lead time       : ',self.LEAD_TIME)
-        print('Shipping cost   : ',self.FIXED_SHIPPING_COST)
+        print('Setup cost                       : ',self.SETUP_COST)
+        print('Holding cost                     : ',self.HOLDING_COST)
+        print('Purchasing cost                  : ',self.HOLDING_COST)
+        print('Shipping cost                    : ',self.SHIPPING_COST)
+        print('Lead time                        : ',self.LEAD_TIME)
+        print('Fixed Shipping cost              : ',self.FIXED_SHIPPING_COST)
         print('Retailer arrival rate priority   : ',self.RETAILER_ARRIVAL_RATE_1)
         print('Retailer arrival rate ordinary   : ',self.RETAILER_ARRIVAL_RATE_2)
-        print('Fixed cost      : ',self.FIXED_COST)
-        print('Cost losing priority customer : ',self.COST_LOSE_1)
-        print('Cost losing ordinary customer : ',self.COST_LOSE_2)
+        print('Fixed cost                       : ',self.FIXED_COST)
+        print('Cost losing priority customer    : ',self.COST_LOSE_1)
+        print('Cost losing ordinary customer    : ',self.COST_LOSE_2)
 
 
     def dcArrivalRate(self,X):
@@ -202,19 +202,19 @@ class SupplyChain:
                     totalLostCost+=self.meanShortageRate2[j]*self.COST_LOSE_2*Y[j] 
         return totalLostCost
 
-    def penaltyCost(self,chromosome):
+    def calcPenaltyCost(self,chromosome):
         '''Calculate penalty cost for dummy DC'''
-        #Cal how many customers assign to DC then multiply (1 penalty add 10k)
-        #Got how many retailers assign to that DC
-        #Count total dummy DC in chromosomes there (Loop chromosome)
-        pass
+        #Calc penalty cost based on how many retailer assign to dummy DC
+        totalPenaltyCost=0
+        dummyDCCount=chromosome.count(self.NO_OF_DC+1)
+        totalPenaltyCost=dummyDCCount*10000
+        return totalPenaltyCost
     
-    #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
     def calcTotalCost(self,X:list,Y:list,s,Q):
         '''Calculate min total cost (TC)'''
         return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
     
-    #Try to do total cost for one DC, no need to loop j
+    #TODO Try to do total cost for one DC, no need to loop j
     def calcTotalCostForEachDC(self,X:list,Y,s,Q,j): #X is matrix, only pass that column(ONLY COL), Y only 1 or 0 not list d
         pass
 
