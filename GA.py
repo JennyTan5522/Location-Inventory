@@ -15,62 +15,58 @@ class GA:
         #TODO rmb to change back NO_OF_RETAILER & DC
 
     #=======================================================================================================
-    def initialPopulation(self):
-        '''Step 1: Initiating first population'''
-        def generateChromosome():
-            '''Generating chromosomes based on population size'''
-            #NO_OF_DC+1 cater for the dummy DC
-            chromosome=[random.randint(1,sc.NO_OF_DC+1) for i in range(sc.NO_OF_RETAILER)]
-            return chromosome
-        # return [generateChromosome() for _ in range(self.POP_SIZE)]
+    def generateChromosome(self):
+        '''Generating chromosomes based on the size of DC and retailer'''
+        #NO_OF_DC+1 cater for the dummy DC
+        chromosome=[random.randint(1,sc.NO_OF_DC+1) for i in range(sc.NO_OF_RETAILER)]
+        return chromosome
         
     #=======================================================================================================
     def evaluateChromosome(self,chromosome): 
-        '''Step 2: Evaluating chromosomes: Using fitness function (Min TC form SC)'''
-        #self.sc.calcTotalCost(X,Y,s,Q)
-        #In population then loop for each chromosome, then find the fitness
+        '''Evaluating chromosomes: Using fitness function (Min TC form SC)'''
+        #Generate X and Y
         X=self.sc.generateX(chromosome)
         Y=self.sc.generateY(X)
-        #Compute s and Q (a list with j elements) -> Call function
-
-        #Then pass to fitness
-        fitness=self.sc.penaltyCost(chromosome)+self.sc.calcTotalCost()
-        pass
+        #Compute optimum s and Q (a list with j elements) 
+        finalOptimalSQ=self.calcOptimumSQ(X,Y)
+        #Then pass to fitness:  #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
+        fitness=self.sc.calcPenaltyCost(chromosome)+self.sc.calcTotalCost()
+        return fitness
 
     #=======================================================================================================
     def elitism(self):
-        '''Step 3: Retaining the best individuals in a gen unchanged in the next gen'''
+        '''Retaining the best individuals in a gen unchanged in the next gen'''
         pass
 
     #=======================================================================================================
     def rouletteWheelSelection(self):
-        '''Step 4: Parents selection based on roulette wheel selection'''
+        '''Parents selection based on roulette wheel selection'''
         pass
 
     #=======================================================================================================
     def crossOver(self,n_parents):
-        '''Step 5: Crossover 2 parents to generate new offspring'''
+        '''Crossover 2 parents to generate new offspring'''
         pass
     #=======================================================================================================
     def inversion_mutation(population,chromosome):
-        '''Step 6: Mutation used to maintain the genetic diversity of the chromosomes'''
+        '''Mutation used to maintain the genetic diversity of the chromosomes'''
         #     #Mutation operator in GA avoids convergence to local optimum and diverfies the population
         #     #Replacing a gene with a randomly selected number according to the parameter's boundaries
         pass
 
     #=======================================================================================================
     def evaluateOffsprings(self):
-        '''Step 7: Evaluate the performance of offsprings'''
+        '''Evaluate the performance of offsprings'''
         #Best chromosome, everytime will check whether it will better than best chromosome
         pass
 
     #=======================================================================================================
     def calcOptimumSQ(self,X,Y):
         '''Find optimal S0j, Q0j and costs'''
-        #Call step 1
+        #-- Step1: Find Qmin for each DC --
         Qmin=self.sc.calcQmin()
 
-        #Step 2:Calculate Q0 and s0 to find optimal Q0 and s0
+        #-- Step 2:Calculate Q0 and s0 to find optimal Q0 and s0 --
         #Loop for every DC's s0 and q0
         s0List=[] 
         q0List=[]
@@ -99,21 +95,14 @@ class GA:
             if minValue!=0:
                 s0List.append(targetS0)
                 q0List.append(targetQ0)
-        return s0List,q0List
 
-    #=======================================================================================================
-    def calcOptimumQ(self,X,Y):
-        '''Find optimal S0j, Q0j and costs'''
-        #Call step 1
-        Qmin=self.sc.calcQmin() #Can remove
-
-        #Step 2:Calculate optimal Q1 when s=0
+        #-- Step 3: Find optimal Q1j when s=0 --
         q1List=[]
-        for j in range(self.sc.NO_OF_DC):#Loop every DC to calculate
-            breakQFlag=False #If found correct then break
-            minValue=9999 #In case cannot found=0, then found the nearest min value
+        for j in range(self.sc.NO_OF_DC):
+            breakQFlag=False
+            minValue=9999 
             targetQ1=None
-            for q1 in range(1,round(Qmin[j])): #Loop q0, starting from q1-1 reversed=1259
+            for q1 in range(1,round(Qmin[j])):
                 diff=self.sc.calcTotalCostForEachDC(X[j],Y[j],0,q1+1)-self.sc.calcTotalCostForEachDC(X[j],Y[j],0,q1)
                 if diff<minValue:
                     minValue=diff
@@ -128,26 +117,44 @@ class GA:
             #If cannot cater 0
             if minValue!=0:
                 q1List.append(targetQ1)
-        return q1List
+        
+        #-- Step 4: Compare the TC cost based on Step 2 and 3, find the optimal s and q --
+        finalOptimalSQ=[]
+        for j in range(self.sc.NO_OF_DC):
+            tcCost1=self.sc.calcTotalCostForEachDC(X[j],Y[j],s0List[j],q0List[j])
+            tcCost2=self.sc.calcTotalCostForEachDC(X[j],Y[j],0,q1List[j])
+            if(tcCost1<tcCost2):
+                #Save as tuple
+                finalOptimalSQ.append((s0List[j],q0List[j]))
+            else:#tcCost1>tcCost2
+                finalOptimalSQ.append((0,q1List[j]))
 
-    #=======================================================================================================
-    def generateOptimumQ(self,X,Y):
-        s0List,q0List=self.calcOptimumSQ(X,Y)
-        q1List=self.calcOptimumQ(X,Y)
-        #Loop j
-        #j's q0 and s'0 compare with 0,q1List
-        #Call TC to compare these 2 compare
-        #FInd the best optimal s and q of each DC
-        #Final: 1 list contains of j elements, each element represent s and q (can save as tuple)
-
-
-
-                
+        return finalOptimalSQ
+           
     def run(self):
         '''Function to run the GA'''
-        #Step 1: initialization
-        self.population=self.initialPopulation()
-        print(self.population)
+        #Step 1: Initiating first population
+        self.population=[self.generateChromosome() for _ in range(self.POP_SIZE)]
+        
+        for iter in range(self.MAX_GENERATION): #Total iterations
+            #Step 2: Evaluating chromosome
+            ranked_population=[]
+            for idx,chromosome in enumerate(self.population):
+                ranked_population.append(self.evaluateChromosome(chromosome))
+            
+            #Step 3: Reproduction (Elitism)
+            #Chromosomes with higher fitness values are more desirable
+            #For each generation, a constant percentage of the chromosomes with higher fitness value are automatically 
+            #copied to the next generation  
+            
+
+            #Step 4: Parents selection
+
+            #Step 5: Crossover
+
+            #Step 6: 
+            pass
+        
         
 
 sc=SupplyChain('5-10','TYPE_I')
