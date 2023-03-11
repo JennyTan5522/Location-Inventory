@@ -72,19 +72,6 @@ class SupplyChain:
         print('Cost losing priority customer : ',self.COST_LOSE_1)
         print('Cost losing ordinary customer : ',self.COST_LOSE_2)
 
-    def dcArrivalRate(self,X):
-        '''
-        Find DC arrival rate based on retailer arrival rate
-        Arrival rate depends on X.
-        Chromosome --> X --> generate DC AR -- compute TC
-        '''
-        retailerArrivalRate1=np.reshape(self.RETAILER_ARRIVAL_RATE_1,(1,self.NO_OF_RETAILER))
-        dcArrivalRate1=np.matmul(retailerArrivalRate1,np.array(X))
-        retailerArrivalRate2=np.reshape(self.RETAILER_ARRIVAL_RATE_2,(1,self.NO_OF_RETAILER))
-        dcArrivalRate2=np.matmul(retailerArrivalRate2,np.array(X))
-        self.DC_ARRIVAL_RATE_1=[ar for _,ar in enumerate(dcArrivalRate1)]
-        self.DC_ARRIVAL_RATE_2=[ar for _,ar in enumerate(dcArrivalRate2)]
-    
     def calcProbState0(self,s:list,Q:list):
         '''Calculate probability at Stage 0'''
         probState0List=[]
