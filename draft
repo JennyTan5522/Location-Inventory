@@ -75,6 +75,7 @@ class Genetic_Algorithm:
             '''Step 5: Crossover 2 parents to generate new offspring'''
             childs=[]
             #Select 2 parents and pass to crossOverParent
+            #Single point crossover
             for i in range(0,len(n_parents),2):
                 pos=random.randint(1,self.INDIVIDUAL_LENGTH-1)
                 child1=n_parents[i][:pos]+n_parents[i+1][pos:]

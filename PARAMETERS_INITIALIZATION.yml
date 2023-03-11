@@ -4,17 +4,12 @@
 # Create 3 different size lists [SMALL,MEDIUM,LARGE]
 # Based on the size type, create lists of no [S,DC,R] 
 PROBLEM_SIZE:
- - SMALL:
     5-10: [1,5,10]
     10-20: [1,10,20]
     15-30: [1,15,30]
-
- - MEDIUM:
     50-75: [1,50,75]
     75-150: [1,75,150]
     100-250: [1,100,250]
-
- - LARGE:
     200-300: [1,200,300]
     350-500: [1,350,500]
     500-1300: [1,500,1300]
@@ -35,7 +30,7 @@ PROBLEM_SIZE:
 # COST_LOSE_2                   : Cost for losing priority ordinary
 SITUATION_TYPE:
 #DCs with low demand (perishable products)
- -  TYPE_I:
+  TYPE_I:
      SETUP_COST: [800,1300]
      HOLDING_COST: [500,1500]
      PURCHASING_COST_UNIT: [5,50]
@@ -47,7 +42,7 @@ SITUATION_TYPE:
      COST_LOSE_1: 100
      COST_LOSE_2: 50
 #DCs closer to retailers (Enough trucks/drivers) (Far from suppliers)    
- -  TYPE_II:
+  TYPE_II:
      SETUP_COST: [400,800]
      HOLDING_COST: [500,1500]
      PURCHASING_COST_UNIT: [20,100]
@@ -59,7 +54,7 @@ SITUATION_TYPE:
      COST_LOSE_1: 100
      COST_LOSE_2: 50     
 #DCs closer to suppliers (Far from retailers)
- -  TYPE_III:
+  TYPE_III:
      SETUP_COST: [600,1600]
      HOLDING_COST: [500,1500]
      PURCHASING_COST_UNIT: [5,55]
@@ -71,7 +66,7 @@ SITUATION_TYPE:
      COST_LOSE_1: 100
      COST_LOSE_2: 50  
 #Ideal DCs that try to minimize all operation costs
- -  TYPE_IV:
+  TYPE_IV:
      SETUP_COST: [500,700]
      HOLDING_COST: [100,300]
      PURCHASING_COST_UNIT: [20,45]
