@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 class SupplyChain:
+    
     def __init__(self,PROBLEM_SIZE,SITUATION_TYPE,display_param=False):
         random.seed(42)
 
@@ -72,48 +73,59 @@ class SupplyChain:
         print('Cost losing priority customer : ',self.COST_LOSE_1)
         print('Cost losing ordinary customer : ',self.COST_LOSE_2)
 
+    def calcDcArrivalRate(self, X:list):
+        '''Find DC arrival rate based on retailer arrival rate. Arrival rate depends on X.
+           Execute this function after compute X. Call from GA.py
+        '''
+        # Chromosome -> X -> generate DC Arrival rate -> Compute total cost
+        retailerArrivalRate1 = np.reshape(self.RETAILER_ARRIVAL_RATE_1,(1,self.NO_OF_RETAILER))
+        dcArrivalRate1 = np.matmul(retailerArrivalRate1,np.array(X))
+        self.DC_ARRIVAL_RATE_1 = [ar for _,ar in enumerate(dcArrivalRate1)]
+        
+        retailerArrivalRate2 = np.reshape(self.RETAILER_ARRIVAL_RATE_2,(1,self.NO_OF_RETAILER))
+        dcArrivalRate2 = np.matmul(retailerArrivalRate2,np.array(X))
+        self.DC_ARRIVAL_RATE_2 = [ar for _,ar in enumerate(dcArrivalRate2)]
+        
     def calcProbState0(self,s:list,Q:list):
-        '''Calculate probability at Stage 0'''
-        probState0List=[]
-        for j in range(self.NO_OF_DC):
-            probState0List.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])/(self.DC_ARRIVAL_RATE_1[j]+(self.DC_ARRIVAL_RATE_2[j]+(Q[j]*self.LEAD_TIME[j]))*pow((1+self.LEAD_TIME[j]/self.DC_ARRIVAL_RATE_1[j]),s[j]))
-        return probState0List
+        '''Calculate probability at Stage 0 - each dc has its own probstate0'''
+        return np.divide(np.add(self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2),
+                         np.add(self.DC_ARRIVAL_RATE_1, 
+                                np.multiply(np.add(self.DC_ARRIVAL_RATE_2,np.multiply(Q,self.LEAD_TIME)),
+                                            np.power(np.add(1,np.divide(self.LEAD_TIME, self.DC_ARRIVAL_RATE_1)),s))))
     
     def calcInventoryLevelCost(self,s:list,Q:list):
-        '''Calculate inventory level cost for each DC'''
-        ilCostList=[]
-        self.probState0List=self.calcProbState0(s,Q)
-        for j in range(self.NO_OF_DC):
-            a=pow((1+self.LEAD_TIME[j]/self.DC_ARRIVAL_RATE_1[j]),s[j])
-            b=(s[j]*self.DC_ARRIVAL_RATE_2[j])/(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])
-            c=(self.LEAD_TIME[j]*Q[j]*(Q[j]+2*s[j]+1))/(2*self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])
-            d=(Q[j]*self.DC_ARRIVAL_RATE_1[j])/(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])
-            e=(self.DC_ARRIVAL_RATE_1[j]*self.DC_ARRIVAL_RATE_2[j])/(self.LEAD_TIME[j]*(self.DC_ARRIVAL_RATE_1[j]*self.DC_ARRIVAL_RATE_2[j]))
-            f=Q[j]+(self.DC_ARRIVAL_RATE_2[j]/self.LEAD_TIME[j])
-            g=(self.DC_ARRIVAL_RATE_1[j]/(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j]))
-            ilCostList.append(a*((b+c-d-e)*self.probState0List[j])+f*g*self.probState0List[j])
-        return ilCostList
+        '''Calculate inventory level cost for each DC - each dc has its own IL'''
+        t1 = np.power(np.add(1, np.divide(self.LEAD_TIME, self.DC_ARRIVAL_RATE_1)), s)
+        
+        t2a = np.divide(np.multiply(s, self.DC_ARRIVAL_RATE_2), self.add(self.DC_ARRIVAL_RATE_1,self.DC_ARRIVAL_RATE_2))
+        t2b = np.divide(np.multiply(np.multiply(self.LEAD_TIME, Q), np.add(np.add(Q, np.multiply(2,s)),1)),
+                        np.multiply(2, np.add(self.DC_ARRIVAL_RATE_1, self.DC_ARRIVAL_RATE_2)))
+        t2c = np.divide(np.multiply(Q, self.DC_ARRIVAL_RATE_1), np.add(self.DC_ARRIVAL_RATE_1, self.DC_ARRIVAL_RATE_2))
+        t2d = np.divide(np.multiply(self.DC_ARRIVAL_RATE_1, self.DC_ARRIVAL_RATE_2), 
+                        np.multiply(self.LEAD_TIME, np.add(self.DC_ARRIVAL_RATE_1, self.DC_ARRIVAL_RATE_2)))
+        t2 = np.multiply(np.subtract(np.subtract(np.add(t2a, t2b), t2c), t2d), self.probState0List)
+        
+        t3a = np.add(Q, np.divide(self.DC_ARRIVAL_RATE_2, self.LEAD_TIME))
+        t3b = np.divide(self.DC_ARRIVAL_RATE_1, np.add(self.DC_ARRIVAL_RATE_1, self.DC_ARRIVAL_RATE_2))
+        t3 = np.multiply(np.multiply(t3a, t3b), self.probState0List)
+        
+        return np.add(np.multiply(t1, t2), t3)
 
-    def calcReorderRate(self,s:list,Q:list):
-        reorderCostList=[]
-        probState0=self.calcProbState0(s,Q)
-        for j in range(self.NO_OF_DC):
-            reorderCostList.append(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j])*probState0[j]*(s[j]+1)
-        return reorderCostList
-    
+    def calcReorderRate(self,s:list):
+        '''Compute mean reorder rate, R for each j'''
+        return np.multiply(np.multiply(self.LEAD_TIME, 
+                                       np.power(np.add(1, np.divide(self.LEAD_TIME, self.DC_ARRIVAL_RATE_1)), s)), 
+                           self.probState0List)
+
     def calcShortageRate1(self):
         '''Calculate Mean Shortage Rates for the PRIORITY customers at each DC'''
-        shortageRate1List=[]
-        for j in range(self.NO_OF_DC):
-            shortageRate1List.append(self.DC_ARRIVAL_RATE_1[j]*self.probState0List[j])
-        return shortageRate1List 
+        return np.multiply(self.DC_ARRIVAL_RATE_1, self.probState0List)
 
     def calcShortageRate2(self,s):
         '''Calculate Mean Shortage Rates for the ORDINARY customers at each DC'''
-        shortageRate2List=[]
-        for j in range(self.NO_OF_DC):
-            shortageRate2List.append(self.DC_ARRIVAL_RATE_2[j]*pow((1+self.LEAD_TIME[j]/self.DC_ARRIVAL_RATE_1[j]),s[j])*self.probState0List[j])
-        return shortageRate2List
+        return np.multiply(np.multiply(self.DC_ARRIVAL_RATE_2,
+                                       np.power(np.add(1, np.divide(self.LEAD_TIME, self.DC_ARRIVAL_RATE_1)), s)),
+                           self.probState0List)
     
     def calcTerm1(self,Y:list):
         '''Term 1: Calculate fixed cost of each DC
@@ -121,19 +133,19 @@ class SupplyChain:
         '''  
         return np.dot(self.FIXED_COST, Y)
     
-    def calcTerm2(self,Y:list,s:list,Q:list):
+    def calcTerm2(self,Y:list):
         '''Term 2: Calculate holding cost of each DC
             h[j] * IL[j] * Y[j]
         '''
-        self.il=self.calcInventoryLevelCost(s,Q)   # TODO: move to other place
         return (np.dot(np.multiply(self.HOLDING_COST,self.il),Y))
         
     def calcTerm3(self,Y:list,Q:list):
         '''Term 3: Calculate setup cost, unit purchasing cost and fixed shipping cost per order between Supplier and DC
             (k[j] + g[j] + c[j] * Q[j]) * R[j] * Y[j]       
         '''
-        self.reorderCostList=self.calcReorderRate  # TODO: move to other place
-        return np.dot(np.multiply(np.add(np.add(self.SETUP_COST,self.FIXED_SHIPPING_COST),np.multiply(self.PURCHASING_COST_UNIT,Q)),self.reorderCostList),Y)
+        return np.dot(np.multiply(np.add(np.add(self.SETUP_COST,self.FIXED_SHIPPING_COST),
+                                         np.multiply(self.PURCHASING_COST_UNIT,Q)),
+                                  self.reorderCostList),Y)
 
     def calcTerm4(self,X:list):
         '''Term 4: Transportation cost from DC to the retailer
@@ -146,44 +158,53 @@ class SupplyChain:
         '''Term 5: lost sales due to demand lost for each customer classes
             SR[r][j] * LC[r] * Y[j]
         '''
-        self.meanShortageRate1=self.calcShortageRate1()   # TODO: move to other place
-        self.meanShortageRate2=self.calcShortageRate2()   # TODO: move to other place
-        return np.dot(np.multiply(self.meanShortageRate1,self.COST_LOSE_1),Y) + np.dot(np.multiply(self.meanShortageRate2,self.COST_LOSE_2),Y)
+        return np.dot(np.multiply(self.meanShortageRate1,self.COST_LOSE_1),Y) + \
+               np.dot(np.multiply(self.meanShortageRate2,self.COST_LOSE_2),Y)
 
-    def penaltyCost(self,chromosome):
-        '''Calculate penalty cost for dummy DC'''
+    def penaltyCost(self,chromosome:list):
         '''Calculate penalty cost for dummy DC'''
         #Calc penalty cost based on how many retailer assign to dummy DC
-        totalPenaltyCost=0
-        dummyDCCount=chromosome.count(self.NO_OF_DC+1)
-        totalPenaltyCost=dummyDCCount*10000
-        return totalPenaltyCost
+        return chromosome.count(self.NO_OF_DC+1)*10000
     
     #TODO check X or Y whether dummy DC is got open or not, if got add penalty cost
-    def calcTotalCost(self,X:list,Y:list,s,Q):
-        '''Calculate min total cost (TC)'''
-        #Find DC arrival rate based on retailer arrival rate. Arrival rate depends on X.
-        #Chromosome -> X -> generate DC Arrival rate -> Compute total cost
-        retailerArrivalRate1=np.reshape(self.RETAILER_ARRIVAL_RATE_1,(1,self.NO_OF_RETAILER))
-        dcArrivalRate1=np.matmul(retailerArrivalRate1,np.array(X))
-        retailerArrivalRate2=np.reshape(self.RETAILER_ARRIVAL_RATE_2,(1,self.NO_OF_RETAILER))
-        dcArrivalRate2=np.matmul(retailerArrivalRate2,np.array(X))
-        self.DC_ARRIVAL_RATE_1=[ar for _,ar in enumerate(dcArrivalRate1)]
-        self.DC_ARRIVAL_RATE_2=[ar for _,ar in enumerate(dcArrivalRate2)]
+    def calcTotalCost(self,X:list,Y:list,s:list,Q:list,targetDC=None):
+        '''Calculate total cost (TC) givem X, Y, s & Q
+            :targetDC: assign the DC ID only if want to compute the total cost for that particular DC
+        '''
 
-        return self.calcTerm1(Y)+self.calcTerm2(Y,s,Q)+self.calcTerm3()+self.calcTerm4()+self.calcTerm5()
-    
-    #Try to do total cost for one DC, no need to loop j
-    def calcTotalCostForEachDC(self,X:list,Y,s,Q,j): #X is matrix, only pass that column(ONLY COL), Y only 1 or 0 not list d
-        pass
+        # Compute param that affected by X, s & q - required to update once hv new s & q
+        self.probState0List = self.calcProbState0(s,Q)
+        self.il = self.calcInventoryLevelCost(s,Q)
+        self.reorderCostList = self.calcReorderRate(s)
+        self.meanShortageRate1 = self.calcShortageRate1()   # only able to compute after computing probState0List
+        self.meanShortageRate2 = self.calcShortageRate2(s)
+        
+        if targetDC is not None:
+            """
+            When computing TC, the cost incurred by DC will only be calculated if the DC is open.
+            To calc TC for a particular DC, assign 0 for all the other DC in X and Y.
+            For example: targetDC = 2
+                         X = [[1,0,1,0,1], --> [[0,0,0,0,0],
+                              [0,1,0,1,0]]      [0,1,0,0,0]]
+                         Y = [1,1,0,1,1] --> [0,1,0,0,0]   
+            """
+            X = [[elem if idx==(targetDC-1) else 0 for idx, elem in enumerate(X[i])] for i in range(len(X))]
+            Y = [elem if idx==(targetDC-1) else 0 for idx, elem in enumerate(Y)]
+
+        return self.calcTerm1(Y) + \
+               self.calcTerm2(Y) + \
+               self.calcTerm3(Y,Q) + \
+               self.calcTerm4(X) + \
+               self.calcTerm5(Y)
 
     def calcQmin(self):
-        '''Step 1: Calculate Qmin for each DC'''
-        Qmin=[]
-        for j in range(self.NO_OF_DC):
-            QminCost=((self.COST_LOSE_1-self.PURCHASING_COST_UNIT[j])*self.DC_ARRIVAL_RATE_1[j]*(self.DC_ARRIVAL_RATE_1[j]+self.DC_ARRIVAL_RATE_2[j]))/(self.HOLDING_COST[j]*self.LEAD_TIME[j])
-            Qmin.append(QminCost) 
-        return Qmin
+        '''Step 1: Calculate Qmin for each DC
+            return list of Qmin with size j
+        '''
+        return np.divide(np.multiply(np.multiply(np.subtract(self.COST_LOSE_1, self.PURCHASING_COST_UNIT),
+                                                 self.DC_ARRIVAL_RATE_1),
+                                     np.add(self.DC_ARRIVAL_RATE_1+self.DC_ARRIVAL_RATE_2)),
+                         np.multiply(self.HOLDING_COST, self.LEAD_TIME))
     
 #Create SC instance objects
 if __name__ == "__main__":
